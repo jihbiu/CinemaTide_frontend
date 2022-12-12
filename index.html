@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="styles/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300&family=Oswald&family=Poppins&family=Roboto&family=Roboto+Condensed:wght@300;400&display=swap" rel="stylesheet">
+    <title>CinemaTide</title>
+</head>
+<body>
+    <div id="container">
+        <nav>
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <div class="logo-name">
+                        <p class="logo-cinema">Cinema</p>
+                        <p class="logo-tide">Tide</p>
+                    </div>
+                    <img src="img/logo_2.png">
+
+                </div>
+                <a class="toggle-button">
+                    <span class="burger-bar"></span>
+                    <span class="burger-bar"></span>
+                    <span class="burger-bar"></span>
+                </a>
+
+                <div class="nav-links">
+                    <ul>
+                        <li><a href="#now-playing-container">Repertuar</a></li>
+                        <li><a href="#contact">Kontakt</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <main>  
+        <div id="main-segment">
+            <div class="slider">
+                <a class="slide-update prev-slide" onclick="updateSlide(-1)">&lt;</a>
+                <a class="slide-update next-slide" onclick="updateSlide(1)">&gt;</a>
+            </div>
+             <div id="now-playing-container">
+                
+                <div class="filter-button"><a>Filtry</a></div>
+
+                 <div class="filter">
+
+                    <form class="movie-form-filter">
+                        <input type="text" class="search-movie" placeholder="Szukaj po nazwie...">
+                        <div class="wrapper-filter-options">
+                            <select class="movie-select-type" name="movie-genre">
+                                <option class="movie-genre" value="none">Wybierz gatunek</option>
+                                <option class="movie-genre" value="Akcja">Akcja</option>
+                                <option class="movie-genre" value="Sci-Fi">Sci-Fi</option>
+                                <option class="movie-genre" value="Przygodowy">Przygodowy</option>
+                                <option class="movie-genre" value="Fantasy">Fantastyka</option>
+                                <option class="movie-genre" value="Animacja">Animacja</option>
+                                <option class="movie-genre" value="Dramat">Dramat</option>
+                                <option class="movie-genre" value="Komedia">Komedia</option>
+                                <option class="movie-genre" value="Historia">Historyczny</option>
+                            </select>
+                            <select class="movie-select-language" name="movie-language">
+                            <option class="movie-language" value="none">Wybierz język</option>
+                            <option class="movie-language" value="dubbing">Polski (dubbing)</option>
+                            <option class="movie-language" value="napisy">Angielski (polskie napisy)</option>
+                            </select>
+                            <select class="movie-select-day" name="movie-day">
+                            <option class="movie-day" value="none">Wybierz dzień tygodnia</option>
+                            <option class="movie-day" value="0">Poniedziałek</option>
+                            <option class="movie-day" value="1">Wtorek</option>  
+                            <option class="movie-day" value="2">Środa</option>  
+                            <option class="movie-day" value="3">Czwartek</option>  
+                            <option class="movie-day" value="4">Piątek</option>                              
+                            <option class="movie-day" value="5">Sobota</option>   
+                            <option class="movie-day" value="6">Niedziela</option>       
+                        </select>
+                        </div>
+                    </form>
+                    <div class="wrapper-filter-button">
+                        <button class="movie-filter-send" onclick=refresh()> Filtruj</button>
+                    </div>  
+                    <div class="filter-error">
+                        <h1>test</h1>
+                    </div>  
+                 </div>
+                <div class="this-week"><h1>W tym tygodniu</h1></div>
+                 <div class="movie-container"></div>
+             </div>
+             <div class="comming-soon-container">
+                <h1>Już niedługo!</h1>
+                <div class="movie-container"></div>
+             </div>
+
+
+        </div>
+        </main>    
+        <footer id="contact">
+            <div class="adress"> Adres Kina: Adres Kinowy a/b</div>
+            <div class="email"> Email kontaktowy: email@gmail.com</div>
+        </footer>
+    </div>
+</body>
+    <script src="js/carousel.js"></script>
+    <script>
+        var movies = [];
+        var screenings = [];
+        var reservations = [];
+        var movieHalls = [];
+        var seats = [];
+        var users = [];
+        var todayDate = new Date();
+        var todayYear = todayDate.getFullYear();
+        var todayMonth = todayDate.getMonth() + 1;
+        var todayDay = todayDate.getDate();
+
+        var seatLastIndex = 1;
+        var userLastIndex = 1;
+
+        var seatsChoosen = [];
+
+        var nextWeekDate = new Date(
+            todayYear,
+            todayMonth - 1,
+            todayDay + 8
+        );
+        var numberOfColumns;
+
+        var isReservingMenuOpen = false;
+
+        function createColumns(){
+            $("#now-playing-container .movie-container").append(
+                '<div class="movie-block state-passive"></div>'
+            );
+
+            var containerWidth = document.querySelector('.movie-container').offsetWidth;
+            var elementWidth;
+            if(document.querySelector('.movie-block').offsetWidth != null)
+                elementWidth = document.querySelector('.movie-block').offsetWidth;
+
+            $(".slider").children(".slide").remove();
+            $(".movie-container").empty();
+            
+
+
+            if(containerWidth <= 600)
+                numberOfColumns = 1;
+            else if(containerWidth > 600){
+                numberOfColumns = Math.floor(containerWidth / (elementWidth ));
+            }
+            //console.log(containerWidth);
+            //console.log(elementWidth);
+            //console.log(numberOfColumns);
+
+            for(var i = 1; i <= numberOfColumns; i++){
+                $(".movie-container").append(
+                    '<div class="movie-container-column column-' + i + '">' + 
+
+                    '</div>'
+                    ); 
+            }
+
+        }
+
+        function refreshElements(){
+            //add movies to slider
+            for(var i = 1; i <= movies.length; i++){
+                var movieIndex = i - 1;
+                $('.slider').append(
+                    '<a href=#' + movies[movieIndex].movieImgName + '>' + 
+                    '<img class="slide slide-' + i  +
+                    '" src="img/slider-movies/' + movies[movieIndex].movieImgName + '">' +
+                    '</a>'
+                    );    
+            }
+            $(".slide-1").addClass("before");
+            $(".slide-2").addClass("active");
+            $(".slide-3").addClass("after");
+            
+
+
+
+            var columnIndexNowPlaying = 1;
+            var columnIndexLaterPlaying = 1;
+            var formFilterArray = $(".movie-form-filter").serializeArray();
+            var formFilterName = $(".search-movie").val();
+            if(formFilterName.length === 0)
+                formFilterName = "none"
+
+            var filteredMovies = []; //= movies;
+            var filteredScreenings = [];
+
+            for(var i = 0; i < movies.length; i++){
+                filteredMovies.push(movies[i]);
+            }
+
+            for(var i = 0; i < screenings.length; i++){
+                filteredScreenings.push(screenings[i]);
+            }
+
+            if(formFilterName != "none"){
+                for(var i = 0; i < filteredMovies.length; i++){
+                    var movieTitle = filteredMovies[i].title.toLowerCase();
+                    if(!movieTitle.includes(formFilterName.toLowerCase())){
+                        filteredMovies.splice(i, 1);
+                        i--;
+                    }
+                    //else{
+                    //    console.log("filtrowany film -> " + movieTitle + " posiada " + formFilterName);     
+                    //}
+                }
+            }
+
+            //console.log(formFilterArray);
+
+            if(formFilterArray[0].value != "none"){
+                for(var i = 0; i < filteredMovies.length; i++){
+                    
+                    var movieGenreArray = filteredMovies[i].genres;
+                    var isContainingGenre = false;
+                    for(var j = 0; j < movieGenreArray.length; j++){
+                        var movieGenre = movieGenreArray[j].toLowerCase();
+
+                        if(movieGenre.includes(formFilterArray[0].value.toLowerCase())){
+                           isContainingGenre = true; 
+                        }
+
+                    }
+                    if(isContainingGenre == false){
+                        filteredMovies.splice(i, 1);
+                        i--;
+                    }
+                }
+            }
+            if(formFilterArray[1].value != "none"){
+                for(var i = 0; i < filteredMovies.length; i++){
+                    //var movieLanguageFilter = filteredMovies[i].movieLanguage.toLowerCase();
+
+                    var movieLanguageArray = filteredMovies[i].languages;
+                    var isContainingLanguage = false;
+                    for(var j = 0; j < movieLanguageArray.length; j++){
+                        var movieLanguage = movieLanguageArray[j].toLowerCase();
+                        if(movieLanguage.includes(formFilterArray[1].value.toLowerCase())){
+                            isContainingLanguage=true;
+                        }
+                    }
+                    if(isContainingLanguage == false){
+                        filteredMovies.splice(i, 1);
+                        i--;
+                    } 
+                }
+            }
+            if(formFilterArray[2].value != "none"){
+                for(var i = 0 ; i < filteredMovies.length; i++){
+                    var isMovieInThatDay = false;
+                    for(var j = 0; j < screenings.length; j++){
+                        if(filteredMovies[i].id == screenings[j].movieId){
+                            if(screenings[j].ISOdate.getDay() + 1  == formFilterArray[2].value){
+                                //console.log(screenings[j].ISOdate.getDay() + " | " + formFilterArray[2].value);
+                                isMovieInThatDay = true;
+                            }
+                        }
+                    }
+                    if(!isMovieInThatDay){
+                        filteredMovies.splice(i, 1);
+                        i--;
+                    }
+                }
+            }
+
+
+            if(filteredMovies.length == 0){
+                filteredMovies = movies;
+                $(".filter-error").css("display", "block");
+                $(".filter-error").text("Brak filmów spełniających wymagania!");
+                //console.log("No movies of specific filters");
+            }
+            else if($(".filter-error").css("display") == "block"){
+                $(".filter-error").css("display", "none");
+            }
+
+            for(var i = 0; i < filteredMovies.length; i ++){
+                if(filteredMovies[i].isPlayingThisWeek == true){
+                    $("#now-playing-container .movie-container .column-" + columnIndexNowPlaying).append(
+                            '<div class="movie-block state-passive" id="' + filteredMovies[i].movieImgName + '" >' + 
+                                '<div class="movie-block-img" onclick="movieBlockToggle(this)">' + 
+                                    '<img class="movie-image" src="img/slider-movies/' + filteredMovies[i].movieImgName + '">' + 
+                                '</div>' + 
+                                '<div class="movie-description movie-id-' + filteredMovies[i].id + '">'+
+                                    '<h2 class="movie-title">Tytuł: ' + filteredMovies[i].title + '</h2>' +
+                                    '<h2 class="movie-info">Gatunek: ' + filteredMovies[i].genres.join(", ") + '</h2>' +
+                                    '<h2 class="movie-info">Premiera: ' + filteredMovies[i].premiere + '</h2>' +
+                                    '<h2 class="movie-info">Język: ' + filteredMovies[i].languages.join(", ") + '</h2>' +
+                                    '<h2 class="movie-info">Czas trwania: ' + filteredMovies[i].duration + '</h2>' +
+                                    '<h2 class="movie-info">Opis: ' + filteredMovies[i].text + '</h2>' +
+                                    '<h2 class="movie-buy-ticket"> Wybierz termin </h2>'+
+                                    '<div class="movie-form-choose-screening choose-screening-'+ filteredMovies[i].id +'"></div>' +
+                                '</div>' +
+                            '</div>'
+                        ); 
+                    columnIndexNowPlaying++;
+
+                    if(columnIndexNowPlaying > numberOfColumns){
+                        columnIndexNowPlaying = 1;
+                    }
+                }
+                else{
+                    $(".comming-soon-container .movie-container .column-" + columnIndexLaterPlaying).append(
+                            '<div class="movie-block state-passive" id="' + filteredMovies[i].movieImgName + '">' + 
+                                '<div class="movie-block-img" onclick="movieBlockToggle(this)">' + 
+                                    '<img class="movie-image" src="img/slider-movies/' + filteredMovies[i].movieImgName + '">' + 
+                                '</div>' + 
+                                '<div class="movie-description movie-id-' + filteredMovies[i].id + '">'+
+                                    '<h2 class="movie-title">Tytuł: ' + filteredMovies[i].title + '</h2>' +
+                                    '<h2 class="movie-info">Gatunek: ' + filteredMovies[i].genres.join(", ") + '</h2>' +
+                                    '<h2 class="movie-info">Premiera: ' + filteredMovies[i].premiere + '</h2>' +
+                                    '<h2 class="movie-info">Język: ' + filteredMovies[i].languages.join(", ") + '</h2>' +
+                                    '<h2 class="movie-info">Czas trwania: ' + filteredMovies[i].duration + '</h2>' +
+                                    '<h2 class="movie-info">Opis: ' + filteredMovies[i].text + '</h2>' +
+                                    '<h2 class="movie-buy-ticket"> Wybierz termin </h2>'+
+                                    '<div class="movie-form-choose-screening choose-screening-'+ filteredMovies[i].id +'"></div>' +
+                                '</div>' +
+                            '</div>'
+                            ); 
+
+                    columnIndexLaterPlaying++;
+
+
+                    if(columnIndexLaterPlaying > numberOfColumns){
+                        columnIndexLaterPlaying = 1;
+                    }
+                } 
+            }
+
+            for(var i = 0; i < screenings.length; i++){
+                $(".choose-screening-" + screenings[i].movieId).append(
+                    '<div class="movie-form-choose-day screening-' + screenings[i].movieId + 
+                    '" onclick="screeningChoose(' + i + ')">' + 
+                        '<h2 class=screening-desc>' + screenings[i].time + '</h2>' +
+                        '<h2 class=screening-desc> ' + screenings[i].day + ' </h2>' +
+                    '</div>'
+                );
+            }
+            for(var i = 0; i < filteredMovies.length; i++) {
+                if($(".choose-screening-" + filteredMovies[i].id).children().length == 0){
+                    $(".choose-screening-" + filteredMovies[i].id).append(
+                        '<h3> Brak zaplanowanych seansów</h3>'
+                    );
+                }
+            }
+  
+        }
+
+        function refresh(){
+            createColumns();
+            refreshElements();
+        }
+
+        function movieBlockToggle(thisElement){
+            if($(thisElement).parent().hasClass("state-passive")){
+               $(thisElement).parent().find($(".movie-description")).css("display", "grid");
+               $(thisElement).parent().addClass("state-active");
+               $(thisElement).parent().removeClass("state-passive");
+            }
+            else {
+                $(thisElement).parent().find($(".movie-description")).css("display", "none");
+                $(thisElement).parent().removeClass("state-active");
+                $(thisElement).parent().addClass("state-passive");
+            }
+        }
+
+        function screeningChoose(screeningIndex){
+            //console.log("choosen screening is for the film" + 
+            //    screenings[screeningIndex].movieName
+            //);
+           
+            if($('.pop-up').length){
+                $('.pop-up').empty();
+                $('.pop-up').remove();
+            }
+            else{
+                $("#main-segment").append(
+                    '<div class="pop-up">' +
+                        '<div class="buy-ticket">' + 
+                            '<div class="cross-exit" onclick=closePopUp()>'+
+                                '<span class="cross"></span>'+
+                                '<span class="cross"></span>'+   
+                            '</div>' +
+                            '<div class=screen-movie-id><p>' + 'Sala - ' + screenings[screeningIndex].movieHallId + '</p></div>' + 
+                            '<div class="show-movie-hall">' +
+                                
+                            '</div>' +
+                        '</div>' +
+                    '</div>'
+                );
+
+                var movieHallIndex = screenings[screeningIndex].movieHallId - 1;
+
+                //create columns in our movieHall
+                var movieHallCollumnWidth = ($(".buy-ticket").width() / (movieHalls[movieHallIndex].hallColumns * 1.2));
+                for(var i = 1; i <= movieHalls[movieHallIndex].hallColumns; i++){
+                    $(".show-movie-hall").append(
+                        '<div class="movie-hall-column mh-c-' + i + '"></div>'
+                    );
+                }
+                $(".movie-hall-column").css("width", movieHallCollumnWidth);
+                
+                //add seats to the columns
+                var movieHallCollumnIndex = 1;
+                for(var i = 1; i <= movieHalls[movieHallIndex].hallRows * movieHalls[movieHallIndex].hallColumns; i++){
+                    $(".mh-c-" + movieHallCollumnIndex).append(
+                        '<div class="seat state-taken seat-div-index-' + i + '" onclick=addSeat(' + i +',' + movieHallIndex + ',' + screeningIndex + ')>' + 
+                            '<p class="seat-index">' + i +' </p>' +
+                        '</div>'
+                    );
+                    checkSeat(i, movieHallIndex, screeningIndex);
+                    movieHallCollumnIndex++
+                    if(movieHallCollumnIndex > movieHalls[movieHallIndex].hallColumns){
+                        movieHallCollumnIndex = 1;
+                    }
+                }
+                $(".seat").css("height", movieHallCollumnWidth * 0.7);
+                if($(".seat").height > 30){
+                    $(".seat").css("height", "30");
+                }
+
+                $(".buy-ticket").append(
+                    '<div class="movie-hall-legend">'+
+                        '<div class="legend-seat free"><div class="mark-seat-free"></div><p>Miejsce wolne</p></div>'+
+                        '<div class="legend-seat taken"><div class="mark-seat-taken"></div><p>Miejsce Zajęte</p></div>'+
+                    '</div>'
+                );
+                $(".buy-ticket").append(
+                    '<div class="reserve-user-information">'+
+                        '<form class="user-information">'+
+                            '<input type="text" class="reserve-forname" placeholder="Podaj imię...">' +
+                            '<input type="text" class="reserve-surname" placeholder="Podaj nazwisko...">' +
+                            '<input type="text" class="reserve-email" placeholder="Podaj email...">' +
+                        '</form>'+
+                    '</div>'
+                );
+
+                $(".buy-ticket").append(
+                    '<div class="ticket-reserve" onclick="checkUserInformation(' + screeningIndex + ')">'+
+                        '<p>Rezerwuj miejsca</p>'+
+                    '</div>'
+                );
+
+            }
+        }
+
+        function closePopUp(){
+            if($(".pop-up").length){
+                    $(".pop-up").empty();
+                    $(".pop-up").remove();
+                }
+        }
+
+        function addSeat(seatIndex, movieHallIndex, screeningIndex){
+            var movieHallColumns = movieHalls[movieHallIndex].hallColumns;
+            var movieHallRows = movieHalls[movieHallIndex].hallRows;
+
+            var seatChoosenRow = seatIndex % movieHallColumns;
+            var seatChoosenColumn = Math.floor(seatIndex/movieHallColumns) + 1;
+            if(seatChoosenRow == 0){
+                seatChoosenRow = movieHallColumns;
+                seatChoosenColumn--;
+            }
+
+            var isTaken = false;
+            for(var i = 0; i < seats.length; i++){
+                if(seats[i].seatRow == seatChoosenRow 
+                && seats[i].seatColumn == seatChoosenColumn
+                && seats[i].screeningId == screenings[screeningIndex].id){
+                     isTaken = true;
+                }
+            }
+
+            if(!isTaken){
+                var seatChoosen = {
+                    index: seatIndex,
+                    seatRow: seatChoosenRow,
+                    seatColumn: seatChoosenColumn
+                }
+
+                var isExisting = false;
+                var existingIndex = 0;
+                for(var i = 0; i < seatsChoosen.length; i++){
+                    if(seatsChoosen[i].index == seatIndex){
+                        isExisting = true;
+
+                        seatsChoosen.splice(i, 1);
+                    }
+                }
+                if(isExisting == false){
+                        $(".seat-div-index-" + seatIndex).css("background-color", "#252b69");
+                        seatsChoosen.push(seatChoosen);
+                }
+
+            }
+        }
+        function checkSeat(seatIndex, movieHallIndex, screeningIndex){
+            var movieHallColumns = movieHalls[movieHallIndex].hallColumns;
+            var movieHallRows = movieHalls[movieHallIndex].hallRows;
+
+            var seatChoosenRow = seatIndex % movieHallColumns;
+            var seatChoosenColumn = Math.floor(seatIndex/movieHallColumns) + 1;
+            if(seatChoosenRow == 0){
+                seatChoosenRow = movieHallColumns;
+                seatChoosenColumn--;
+            }
+
+            var isTaken = false;
+            for(var i = 0; i < seats.length; i++){
+                if(seats[i].seatRow == seatChoosenRow 
+                && seats[i].seatColumn == seatChoosenColumn
+                && seats[i].screeningId == screenings[screeningIndex].id){
+                     isTaken = true;
+                }
+            }
+
+            if(isTaken == true){
+                $(".seat-div-index-" + seatIndex).css("background-color", "#252b69");
+            }
+        }
+        function checkUserInformation(screeningIndex){
+            if($(".reserve-forname").val().length == 0 
+                || $(".reserve-surname").val().length == 0
+                || $(".reserve-email").val().length == 0){
+                if($(".information-error").length == 0)
+                $(".reserve-user-information").append(
+                    '<div class="information-error"> Uzupełnij wszystkie pola! </div>'
+                );
+            }
+            else{
+                reserveTickets(screeningIndex);
+                closePopUp();
+            }
+        }
+        function reserveTickets(screeningIndex){
+            //var aScreeningIndex = screeningIndex - 1;
+            var reservedMovie = {
+                id: movies[screenings[screeningIndex].movieId - 1].id,                    
+                title: movies[screenings[screeningIndex].movieId - 1].title,
+                genre: movies[screenings[screeningIndex].movieId - 1].genres.join(", "),
+                premiere: movies[screenings[screeningIndex].movieId - 1].premiere,
+                text: movies[screenings[screeningIndex].movieId - 1].text,
+                duration: movies[screenings[screeningIndex].movieId - 1].duration,
+                language: movies[screenings[screeningIndex].movieId - 1].languages.join(", "),
+                movieImgName: movies[screenings[screeningIndex].movieId - 1].movieImgName
+            }
+
+            var reservedMovieHall = {
+                id: movieHalls[screenings[screeningIndex].movieHallId - 1].id,
+                hallRows: movieHalls[screenings[screeningIndex].movieHallId - 1].hallRows,
+                hallColumns: movieHalls[screenings[screeningIndex].movieHallId - 1].hallColumns
+            }
+
+            var reservedScreening = {
+                id:screenings[screeningIndex].id,
+                movie_id: reservedMovie,
+                movie_hall_id: reservedMovieHall,
+                time: screenings[screeningIndex].fDate_time
+            };
+
+
+            var reservedUser = {
+                id: getUserIdByEmail($(".reserve-email").val()),
+                forname:$(".reserve-forname").val(),
+                surname:$(".reserve-surname").val(),
+                email:$(".reserve-email").val()
+            }
+
+            reservationsMade = [];
+
+            for(var i = 0; i < seatsChoosen.length; i++){
+                var reservedSeat = {
+                    id: seatLastIndex,
+                    seatRow: seatsChoosen[i].seatRow,
+                    seatColumn: seatsChoosen[i].seatColumn,
+                    screening_id: reservedScreening
+                }
+                var reservationMade = {
+                    screening_id: reservedScreening,
+                    user_id: reservedUser,
+                    seat_id: reservedSeat
+                }
+                reservationsMade.push(reservationMade);
+
+                //console.log(reservationsMade.length );
+                $.ajax({
+                    type: 'post',
+                    contentType : "application/json",
+                    url: "http://localhost:8080/api/reservations/addReservation",
+                    data: JSON.stringify(reservationMade),
+                    dataType: "json",
+                });
+                $.ajax({
+                    type: 'post',
+                    contentType : "application/json",
+                    url: "http://localhost:8080/api/seats/addSeat",
+                    data: JSON.stringify(reservedSeat),
+                    dataType: "json",
+                });
+                $.ajax({
+                    type: 'post',
+                    contentType : "application/json",
+                    url: "http://localhost:8080/api/users/addUser",
+                    data: JSON.stringify(reservedUser),
+                    dataType: "json",
+                });
+
+
+                seatLastIndex++;
+                userLastIndex++;
+            }
+            seatsChoosen = [];
+            //console.log(JSON.stringify(reservationsMade));
+
+                $.ajax({
+                    type: 'post',
+                    contentType : "application/json",
+                    url: "http://localhost:8080/api/email/send",
+                    data: JSON.stringify(reservationsMade),
+                    dataType: "json",
+                });
+
+            fetchSeatsData();
+            fetchUsersData();
+        }
+        function fetchMovieData(){
+            movies = [];
+                $.get("http://localhost:8080/api/movies/all").done(function(data){
+                    //movies = data;
+                    //console.log(movies[0].movieImgName);
+                    $.each( data, function(i , item){
+                        itemValues = Object.values(item);
+                    
+                        var fetchedGenres =itemValues[2];
+                        var fetchedGenresArray = fetchedGenres.split(",");
+                    
+                        var fetchedLanguages = itemValues[6];
+                        var fetchedLanguagesArray = fetchedLanguages.split("/");
+                    
+                        var movie = {
+                            id: itemValues[0],
+                            title: itemValues[1],
+                            genres: fetchedGenresArray,
+                            premiere: itemValues[3],
+                            languages: fetchedLanguagesArray,
+                            duration: itemValues[5],
+                            text: itemValues[4],
+                            movieImgName: itemValues[7],
+                            isPlayingThisWeek: false
+                        };
+                        
+                        movies.push(movie);
+                    })
+                
+                })
+            }
+        function fetchScreeningData(){
+            screenings = [];
+            $.get("http://localhost:8080/api/screenings/all").done(function(data){
+                $.each( data,function(i, item){
+                    itemValues = Object.values(item);
+                    var movieTitleScreening = String(itemValues[1].title);
+                    var movieIdScreening = String(itemValues[1].id);
+                
+                    var movieLanguageScreening = String(itemValues[1].language);
+                
+                    var fetchedScreeningDate = itemValues[3].split(",");
+                    var fetchedScreeningDay = fetchedScreeningDate[0];
+                    var fetchedScreeningTime = fetchedScreeningDate[1];
+                
+                    var fetchedScreeningDayArray = fetchedScreeningDay.split(".");
+                    var ISOFormatDate = new Date(fetchedScreeningDayArray[2] + "-" + fetchedScreeningDayArray[1] + "-" + fetchedScreeningDayArray[0]);
+                
+                    if(ISOFormatDate <= nextWeekDate && ISOFormatDate > todayDate){
+                        movies[movieIdScreening - 1].isPlayingThisWeek = true;
+                            //console.log(movies[movieIdScreening - 1].title);
+                            //console.log("screening id -> " + itemValues[0]);
+                            //console.log(movieTitleScreening + " is playing before +> " + nextWeekDate + 
+                            //" couse its playing at -> " + ISOFormatDate);
+                            //console.log("#################");
+                        
+                    }
+                
+                    var screening = {
+                        id: itemValues[0],
+                        movieId: movieIdScreening,
+                        movieName: movieTitleScreening,//itemValues[1].title,
+                        movieHallId: itemValues[2].id,
+                        movieLanguage: movieLanguageScreening,
+                        day: fetchedScreeningDay,
+                        time: fetchedScreeningTime,
+                        ISOdate: ISOFormatDate,
+                        fDate_time: itemValues[3]
+                    }
+                    screenings.push(screening);
+                })
+                createColumns();
+                refreshElements();
+            })
+        }
+        function fetchMovieHallsData(){
+            movieHalls = [];
+                $.get("http://localhost:8080/api/moviehalls/all").done(function(data){
+                    $.each( data, function(i , item){
+                        itemValues = Object.values(item);
+                    
+                        var moviehall = {
+                            id: itemValues[0],
+                            hallRows: itemValues[1],
+                            hallColumns: itemValues[2]
+                        }
+                        movieHalls.push(moviehall);
+                    })
+                })
+            }
+        function fetchSeatsData(){
+            seats = [];
+                $.get("http://localhost:8080/api/seats/all").done(function(data){
+                    $.each( data, function(i , item){
+                        itemValues = Object.values(item);
+
+                        var fetchedSeatScreeningId = String(itemValues[3].id);
+
+                        if(seatLastIndex < itemValues[0])
+                            seatLastIndex =  itemValues[0];
+
+                        var seat = {
+                            id: itemValues[0],
+                            seatRow: itemValues[1],
+                            seatColumn: itemValues[2],
+                            screeningId: fetchedSeatScreeningId
+                        }
+
+                        seats.push(seat);
+                    })
+                })
+            }
+        function fetchUsersData(){
+            users = [];
+            $.get("http://localhost:8080/api/users/all").done(function(data){
+                $.each( data, function(i , item){
+                    itemValues = Object.values(item);
+
+                    if(userLastIndex < itemValues[0])
+                        userLastIndex =  itemValues[0];
+
+                    var user = {
+                        id: itemValues[0],
+                        forname: itemValues[1],
+                        surname: itemValues[2],
+                        email: itemValues[3]
+                    }
+
+                    users.push(user);
+                    //console.log(users);
+                })
+            })
+        }
+        function getUserIdByEmail(email){
+            var foundUserByEmail = false;
+            for(var i = 0; i < users.length; i++){
+                if(users[i].email == email){
+                    //console.log("found user of " + email + "its the index " + users[i].id);
+                    foundUserByEmail = true;
+                    return users[i].id;
+                }
+            }
+            if(foundUserByEmail == false){
+                //console.log("no user of " + email + " and our last index is now -> " + userLastIndex);
+                return userLastIndex;
+            }
+        }
+
+        $(document).ready(function(){
+
+            fetchMovieData();
+            fetchScreeningData();
+            fetchMovieHallsData();
+            fetchSeatsData();
+            fetchUsersData();
+
+            //toggle navbar burger
+            $(".toggle-button").click(function(){
+                if( $(".nav-links").css('display') == 'none') {
+                    $(".nav-links").css("display","flex");
+                    $(".toggle-button").addClass("active");
+                }
+                else {
+                    $(".nav-links").css("display","none");
+                    $(".toggle-button").removeClass("active");
+                }
+            })
+
+            //toggle filter button
+            $(".filter-button").click(function(){
+                if( $(".filter").css('display') == 'none') {
+                    $(".filter").css("display","flex");
+                    $(".toggle-button").addClass("active");
+                }
+                else {
+                    $(".filter").css("display","none");
+                    $(".toggle-button").removeClass("active");
+                }
+            })
+
+
+
+            $(window).resize(function() {
+                refresh();
+            });
+        });
+    </script>
+</html>
